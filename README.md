@@ -2,7 +2,7 @@
 
 <img src="images/manipulated_explanation.png" alt="drawing" width="400" align="justify"/>
 
-An implementation of the paper 'Explanations Can Be Fooled and Geometry is to Blame'
+An implementation of the paper ['Explanations Can Be Fooled and Geometry is to Blame'](https://arxiv.org/abs/1906.07983).
 
 Initial implementation will use the Integrated Gradients explanation method from the paper 'Axiomatic Attribution for Deep Networks.'
 
