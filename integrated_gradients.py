@@ -26,19 +26,14 @@ def integrate_gradients(ob, base, model, n_steps):
     # create path from baseline to observation-- see _paramaterize helper function
     path, step = _parameterize(ob, base, n_steps)
     
-    # Really annoying, but because tensorflow doesn't allow for item assignment, 
-    # We have to append the gradients to a list and convert to a tensor later. Inefficient! But...
-    # Otherwise tf has problems recognizing the gradient of the point w.r.t. integrated gradients.
-    # (which we want for adversarial explanations)
-    # I tried instantiating a numpy array, doing item assignment, and converting to a tensor after, 
-    # but for some reason tensorflow doesn't like that conversion 
-    # (Btw, gotta have an extra dimmension to make the model behave because of batching)  
+    # Tensorflow has difficulty with item assignment--
+    # TODO: look into solution here: 
+    # https://stackoverflow.com/questions/37697747/typeerror-tensor-object-does-not-support-item-assignment-in-tensorflow
     gradients = []
     
     # Calculate the gradient w.r.t. the input of the model's prediction for every point in the path
     for i, step_point in enumerate(path):
         
-        # Weeeeee we love gradient tape
         with tf.GradientTape() as tape:
             
             # Whatever we watch here, we can get the gradient w.r.t.
@@ -48,14 +43,14 @@ def integrate_gradients(ob, base, model, n_steps):
             prediction = model(step_point)
             
         # Get the gradients of the prediction w.r.t to the input image, assign to gradients[step_i]
-        # Also doing an extra step here where we multiply the gradient by the step-- need to for
-        # the Riemann sum. Just think about little rectangles haha. 
+        # Also doing an extra step here where we multiply the gradient by the step-- just a simple
+        # Riemann sum.
         gradients.append(tape.gradient(prediction, step_point)*step)
     
     # Convert the list of tensors to a single tensor
     gradients = tf.convert_to_tensor(gradients)
     
-    # Sum gradient*step across path-- ADD UP YOUR RECTANGLES NERD
+    # Sum gradient*step across path
     explanation = tf.reduce_sum(gradients, axis=0)
     
     return explanation
@@ -67,9 +62,8 @@ def _parameterize(ob, base, n_steps):
     """
     # Stick with tensorflow math
     # You can make it work with numpy/native python ops, 
-    # but if you want to get the gradient w.r.t. the explanation you need tf stuff
+    # but if you want to get the gradient w.r.t. the explanation you need tf ops
     step = tf.math.divide(tf.math.subtract(ob, base), n_steps)
-    # No item assignment, so list appending it is
     path = []
     for i in range(n_steps):
         path.append(base+(step*i))
